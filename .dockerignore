@@ -1,0 +1,15 @@
+bin/
+downloads/*
+!downloads/.gitkeep
+backup/
+temp_plugin/
+*.part
+*.ytdl
+*.mp4
+*.webm
+*.sqlite
+sse_out.txt
+analyze_test.json
+test_*
+dl_status.json
+temp_chrome_cookies.sqlite

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Downloader Pro | Universal Video & Audio Downloader</title>
+  <meta name="description" content="Professional universal video and audio downloader supporting resolutions up to 8K, high-bitrate audio extraction, and queue management." />
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+  <link rel="stylesheet" href="css/style.css?v=1.5" />
+</head>
+<body>
+  <div class="bg-ambient"></div>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand" id="brand-logo-btn">
+      <img src="assets/logo.svg" alt="Downloader Pro Logo" class="brand-logo" />
+      <div class="brand-text">
+        <h1>Downloader<span class="badge-pro">PRO</span></h1>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-tab-btn active" data-tab="downloader" id="nav-btn-downloader">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Downloader
+      </button>
+      <button class="nav-tab-btn" data-tab="queue" id="nav-btn-queue">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+        Queue <span class="nav-badge" id="queue-count-badge">0</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="history" id="nav-btn-history">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        History <span class="nav-badge" id="history-count-badge">0</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="supported" id="nav-btn-supported">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        Supported Sites
+      </button>
+      <button class="nav-tab-btn" data-tab="settings" id="nav-btn-settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Settings
+      </button>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <!-- Direct Folder Quick-Action Button in Header -->
+      <button class="btn btn-secondary btn-sm btn-quick-open-folder" id="header-open-folder-btn" title="Open Downloads Folder in Windows File Explorer" style="display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; padding: 0.4rem 0.8rem; border-color: rgba(99, 102, 241, 0.4);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        <span>Open Downloads Folder</span>
+      </button>
+      <button class="icon-btn" id="theme-toggle-btn" title="Toggle Dark/Light Mode" aria-label="Toggle Theme">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="app-main">
+    
+    <!-- TAB 1: DOWNLOADER -->
+    <section class="tab-pane active" id="tab-downloader">
+      <div class="hero-header">
+        <h2>Universal Video & Audio Downloader</h2>
+        <p>Analyze and extract legitimate video up to 8K 60fps and studio audio across thousands of platforms.</p>
+      </div>
+
+      <!-- Current Download Folder Banner on Downloader Tab -->
+      <div class="download-location-banner" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.75rem 1rem; font-size: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden; flex: 1; min-width: 260px;">
+          <span style="font-size: 1.15rem;">📁</span>
+          <div style="overflow: hidden;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Saved Files Location:</div>
+            <code id="downloader-folder-location" style="color: var(--primary); font-size: 0.85rem; font-family: monospace; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">D:\VIDEO DOWNLOADER\downloads</code>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn btn-secondary btn-sm btn-quick-open-folder" title="Open downloads folder in Windows File Explorer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            Open Folder
+          </button>
+          <button class="btn btn-secondary btn-sm btn-quick-copy-folder" title="Copy folder path to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy Path
+          </button>
+        </div>
+      </div>
+
+      <!-- Clipboard Suggestion Banner -->
+      <div class="clipboard-banner" id="clipboard-banner" style="display: none;">
+        <div class="clipboard-banner-info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+          <div class="clipboard-banner-text">
+            <span>Detected video link in clipboard:</span>
+            <strong id="clipboard-url-text">https://...</strong>
+          </div>
+        </div>
+        <div class="clipboard-banner-actions">
+          <button class="btn btn-primary btn-sm" id="clipboard-use-btn">Paste & Analyze</button>
+          <button class="btn btn-secondary btn-sm" id="clipboard-dismiss-btn">Dismiss</button>
+        </div>
+      </div>
+
+      <!-- URL Input Card -->
+      <div class="card">
+        <div class="url-input-container" id="url-input-container">
+          <div class="url-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          </div>
+          <textarea
+            id="video-url-input"
+            class="url-input-field"
+            placeholder="Paste one or multiple video links here (one per line)..."
+            autocomplete="off"
+            spellcheck="false"
+            rows="1"
+            style="resize: none; overflow-y: hidden;"
+          ></textarea>
+          <div class="url-input-actions">
+            <button class="btn btn-secondary btn-sm" id="paste-btn" title="Paste from Clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+              Paste
+            </button>
+            <button class="btn btn-secondary btn-sm" id="clear-btn" title="Clear URL Input">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              Clear
+            </button>
+            <button class="btn btn-secondary" id="analyze-playlist-btn" style="border: 1px solid var(--accent); color: var(--accent);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              Analyze Playlist
+            </button>
+            <button class="btn btn-primary" id="analyze-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              Analyze Link
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Sample / Platform Chips -->
+        <div class="platform-chips">
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Quick Samples:</span>
+
+          <button class="platform-chip chip-link" data-sample-url="https://www.youtube.com/watch?v=1La4QzGeaaQ" style="cursor: pointer; background: transparent; border: 1px solid var(--border-color); font-family: inherit;">
+            📺 8K Nature Demo
+          </button>
+          <button class="platform-chip chip-link" data-sample-url="https://www.youtube.com/watch?v=-EytSkjYZr0&list=PLZSTpdkjpoH7HoQOSsmlyOTTAt91HuwOl&index=33" style="cursor: pointer; background: transparent; border: 1px solid var(--border-color); font-family: inherit;">
+            📺 Maharaas - Krishna Bhajan | DJJS
+          </button>
+          <button class="platform-chip chip-link" data-sample-url="https://www.youtube.com/watch?v=FwHytr3F8KM&list=PLZSTpdkjpoH7HoQOSsmlyOTTAt91HuwOl" style="cursor: pointer; background: transparent; border: 1px solid var(--border-color); font-family: inherit;">
+            📺 Spl Webcast | Janmashtami Mahotsav 2026
+          </button>
+        </div>
+
+        <!-- Compliance & Legal Terms Notice -->
+        <div class="compliance-notice">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <div>
+            <strong>Compliance &amp; Terms Notice:</strong> Downloader Pro extracts only legitimately provided media streams published by content authors. Downloads are subject to each website's terms, copyright restrictions, and technical limitations. This software does not bypass DRM, paywalls, or private access controls.
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Skeleton Indicator -->
+      <div class="skeleton-container" id="analysis-skeleton">
+        <div class="skeleton-card">
+          <div class="skeleton-thumb"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line meta"></div>
+            <div class="skeleton-line desc"></div>
+            <div class="skeleton-line" style="width: 70%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error State Card -->
+      <div class="error-card" id="analysis-error">
+        <div class="error-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div>
+        <div class="error-card-content">
+          <h4>Analysis Failed</h4>
+          <p id="analysis-error-message">Could not retrieve video formats from this URL.</p>
+          <div class="error-hint">
+            💡 Tips: Verify the link is publicly accessible without login, check if the video has been taken down or made private, and make sure the link starts with http:// or https://.
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Metadata & Formats Section -->
+      <div id="metadata-container" style="display: none;"></div>
+    </section>
+
+    <!-- TAB 2: DOWNLOAD QUEUE -->
+    <section class="tab-pane" id="tab-queue">
+      <div class="queue-header-bar">
+        <div>
+          <h2>Download Queue (<span id="queue-header-count">0</span>)</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">Manage concurrent downloads, view live speeds, and control queue execution.</p>
+        </div>
+        <div class="queue-stats-chips">
+          <span class="stat-chip">Active: <strong id="queue-stat-active">0</strong></span>
+          <span class="stat-chip">Queued: <strong id="queue-stat-queued">0</strong></span>
+          <span class="stat-chip">Completed: <strong id="queue-stat-completed">0</strong></span>
+          <button class="btn btn-secondary btn-sm" id="clear-completed-btn">Clear Completed</button>
+          <button class="btn btn-secondary btn-sm" id="clear-all-queue-btn">Clear All</button>
+        </div>
+      </div>
+
+      <!-- Quick Folder Location Banner -->
+      <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.75rem 1rem; font-size: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden;">
+          <span>📁</span>
+          <span><strong>Downloads Folder:</strong> <code id="queue-folder-location" style="color: var(--primary); font-size: 0.85rem; font-family: monospace;">D:\VIDEO DOWNLOADER\downloads</code></span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn btn-secondary btn-sm btn-quick-open-folder" title="Open downloads directory in Windows File Explorer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            Open Folder in Explorer
+          </button>
+          <button class="btn btn-secondary btn-sm btn-quick-copy-folder" title="Copy folder path to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy Path
+          </button>
+        </div>
+      </div>
+
+      <!-- Queue Items List -->
+      <div class="queue-list" id="queue-items-container">
+        <!-- Rendered by ui.js -->
+      </div>
+    </section>
+
+    <!-- TAB 3: DOWNLOAD HISTORY -->
+    <section class="tab-pane" id="tab-history">
+      <div class="history-controls">
+        <div>
+          <h2>Download History (<span id="history-header-count">0</span>)</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem;">Quickly play finished downloads or locate them in Windows Explorer.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <input type="text" id="history-search-input" class="search-input" placeholder="Search history by title or format..." />
+          <button class="btn btn-secondary btn-sm" id="clear-history-btn">Clear History</button>
+        </div>
+      </div>
+
+      <!-- Quick Folder Location Banner in History -->
+      <div style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 0.75rem 1rem; font-size: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden;">
+          <span>📁</span>
+          <span><strong>Files Saved In:</strong> <code id="history-folder-location" style="color: var(--success); font-size: 0.85rem; font-family: monospace;">D:\VIDEO DOWNLOADER\downloads</code></span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn btn-secondary btn-sm btn-quick-open-folder" title="Open downloads directory in Windows File Explorer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            Open Folder in Explorer
+          </button>
+          <button class="btn btn-secondary btn-sm btn-quick-copy-folder" title="Copy folder path to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy Path
+          </button>
+        </div>
+      </div>
+
+      <!-- History Grid -->
+      <div class="history-grid" id="history-items-container">
+        <!-- Rendered by ui.js -->
+      </div>
+    </section>
+
+    <!-- TAB 4: SUPPORTED SITES -->
+    <section class="tab-pane" id="tab-supported">
+      <div class="hero-header" style="text-align: left; margin-bottom: 1.5rem;">
+        <h2>Supported Platforms &amp; Extractor Engines</h2>
+        <p>Downloader Pro integrates modern extraction engines to safely download public video and audio from thousands of websites.</p>
+      </div>
+
+      <div class="format-grid">
+        <div class="card" style="margin-bottom: 0;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>📺</span> YouTube
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+            Supports up to 8K (4320p), 4K (2160p), 1440p, 1080p Full HD, 60fps high frame rate, and Opus / AAC audio tracks.
+          </p>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🎬</span> Vimeo &amp; Dailymotion
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+            Full support for public video streams, multi-bitrate HLS, and original source MP4 files.
+          </p>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🐦</span> Twitter / X
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+            Fast extraction of published video clips, GIFs, and media attachments up to maximum source resolution.
+          </p>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>📱</span> TikTok &amp; Instagram
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+            Supports public Reels, Stories, and TikTok videos with native high quality audio.
+          </p>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🎧</span> SoundCloud &amp; Bandcamp
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+            Audio extraction with conversion to 320kbps MP3, M4A, or Lossless WAV formats with metadata.
+          </p>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🌐</span> Direct Video Streams (MP4 / WebM / HLS)
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+            Universal support for direct video links, MP4, WebM, and standard .m3u8 playlists across the open web.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SETTINGS -->
+    <section class="tab-pane" id="tab-settings">
+      <div class="card settings-section">
+        <h2 style="font-size: 1.4rem; margin-bottom: 0.5rem;">Application Settings</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">Configure your default download preferences, concurrency limits, and UI options.</p>
+
+        <form id="settings-form">
+          <!-- Download Folder -->
+          <div class="settings-group">
+            <label for="setting-download-path">Default Download Directory</label>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+              <input type="text" id="setting-download-path" class="settings-input" style="flex: 1;" />
+              <button type="button" class="btn btn-secondary btn-sm" id="setting-open-folder-btn">Open Folder</button>
+            </div>
+            <span class="desc">Where downloaded video and audio files will be stored on your local drive.</span>
+          </div>
+
+          <!-- Video Quality Preference -->
+          <div class="settings-row" style="margin-top: 1rem;">
+            <div class="settings-group">
+              <label for="setting-video-quality">Default Video Quality</label>
+              <span class="desc">Quality to pre-select when analyzing videos.</span>
+            </div>
+            <select id="setting-video-quality" class="settings-select">
+              <option value="best">Best Available (Up to 8K/4K)</option>
+              <option value="4k">4K / 2160p</option>
+              <option value="1440p">1440p / 2K</option>
+              <option value="1080p" selected>1080p Full HD</option>
+              <option value="720p">720p HD</option>
+              <option value="480p">480p SD</option>
+            </select>
+          </div>
+
+          <!-- Preferred Video Container -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label for="setting-container">Preferred Video Container</label>
+              <span class="desc">Container format to mux audio and video into.</span>
+            </div>
+            <select id="setting-container" class="settings-select">
+              <option value="mp4" selected>MP4 (Universal Compatibility)</option>
+              <option value="mkv">MKV (Matroska)</option>
+              <option value="webm">WebM</option>
+            </select>
+          </div>
+
+          <!-- Default Audio Format -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label for="setting-audio-format">Default Audio Extraction Format</label>
+              <span class="desc">Format used when extracting audio tracks.</span>
+            </div>
+            <select id="setting-audio-format" class="settings-select">
+              <option value="mp3" selected>MP3 High Quality (320 kbps)</option>
+              <option value="m4a">M4A / AAC (256 kbps)</option>
+              <option value="wav">WAV (Lossless PCM)</option>
+              <option value="source">Original Source Format (Opus/AAC)</option>
+            </select>
+          </div>
+
+          <!-- Concurrent Download Limit -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label for="setting-concurrent-limit">Max Concurrent Downloads</label>
+              <span class="desc">Number of files downloading simultaneously.</span>
+            </div>
+            <select id="setting-concurrent-limit" class="settings-select">
+              <option value="1">1 Download at a time</option>
+              <option value="2" selected>2 Simultaneous Downloads</option>
+              <option value="3">3 Simultaneous Downloads</option>
+              <option value="5">5 Simultaneous Downloads</option>
+            </select>
+          </div>
+
+          <!-- Multi-Threaded Fragment Acceleration -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label for="setting-download-threads">⚡ Download Multi-Threading (Fragments)</label>
+              <span class="desc">Parallel thread count for chunk fetching to eliminate server speed throttling.</span>
+            </div>
+            <select id="setting-download-threads" class="settings-select">
+              <option value="4">4 Threads (Balanced)</option>
+              <option value="8" selected>8 Threads (High Speed - Recommended)</option>
+              <option value="16">16 Threads (Turbo Speed / Gigabit)</option>
+            </select>
+          </div>
+
+          <!-- Connection Drop Protection & Resilient Sockets -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label>🛡️ Connection Loss Protection &amp; Auto-Retry</label>
+              <span class="desc">Auto-retry dropped fragments up to 30 times and keep sockets alive without failing.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-connection-protection" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Theme -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label for="setting-theme">Color Theme</label>
+              <span class="desc">Choose between sleek dark mode or clean light mode.</span>
+            </div>
+            <select id="setting-theme" class="settings-select">
+              <option value="dark" selected>Dark Mode</option>
+              <option value="light">Light Mode</option>
+              <option value="system">Follow System</option>
+            </select>
+          </div>
+
+          <!-- Auto Clipboard Detection Toggle -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label>Auto Clipboard Detection</label>
+              <span class="desc">Prompt to analyze when a valid video URL is copied to your clipboard.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-auto-clipboard" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Desktop Notifications -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label>Completion Notifications</label>
+              <span class="desc">Show alert banner when downloads finish in the queue.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-notifications" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Auto-Start Queue -->
+          <div class="settings-row">
+            <div class="settings-group">
+              <label>Auto-Start Queue</label>
+              <span class="desc">Start downloads immediately when added to the queue.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-auto-start-queue" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              Save Preferences
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Batch Download Panel Overlay -->
+  <div class="modal-overlay" id="batch-panel-overlay" style="align-items: flex-start; padding-top: 3rem;">
+    <div class="modal-box" style="max-width: 800px; width: 96%; max-height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+      <!-- Header -->
+      <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-elevated);">
+        <div>
+          <h3 style="margin: 0; font-size: 1.1rem;">📦 Batch Download</h3>
+          <p id="batch-panel-subtitle" style="margin: 0.25rem 0 0; font-size: 0.82rem; color: var(--text-muted);">Fetching metadata for all links...</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="batch-panel-close-btn">✕ Cancel</button>
+      </div>
+
+      <!-- Progress bar while analyzing -->
+      <div id="batch-panel-progress-wrap" style="padding: 0.75rem 1.5rem; background: var(--bg-surface); border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">
+          <span id="batch-progress-label">Analyzing links...</span>
+          <span id="batch-progress-count">0 / 0</span>
+        </div>
+        <div style="height: 4px; background: var(--border-color); border-radius: 99px; overflow: hidden;">
+          <div id="batch-progress-bar" style="height: 100%; width: 0%; background: var(--accent); border-radius: 99px; transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Batch Item Cards -->
+      <div id="batch-panel-cards" style="flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <!-- Cards rendered here -->
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background: var(--bg-elevated); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
+          <label style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">Apply to all:</label>
+          <select id="batch-global-quality" class="form-select" style="flex: 1; max-width: 280px; font-size: 0.85rem;">
+            <option value="">— Select to override all —</option>
+            <option value="best_av1">⭐ Best Quality + Lowest Size (AV1)</option>
+            <option value="best">👑 Best Available (Any Codec)</option>
+            <option value="1080p">📺 1080p Full HD</option>
+            <option value="720p">📱 720p HD</option>
+            <option value="480p">📶 480p SD</option>
+            <option value="audio_mp3">🎵 Audio Only (MP3)</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" id="batch-apply-all-btn">Apply All</button>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <span id="batch-ready-count" style="font-size: 0.82rem; color: var(--text-muted); align-self: center;"></span>
+          <button class="btn btn-primary" id="batch-download-all-btn" disabled>
+            ⬇ Download All
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmation Overlay -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-box">
+      <h3 class="modal-header" id="modal-title">Confirm Action</h3>
+      <p class="modal-body" id="modal-body">Are you sure you want to perform this action?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="modal-confirm-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-App Media Player Modal -->
+  <div class="modal-overlay" id="player-modal-overlay">
+    <div class="modal-box" style="max-width: 820px; width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h3 id="player-modal-title" style="font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%;">Media Player</h3>
+        <button class="icon-btn" id="player-modal-close-btn" style="width: 32px; height: 32px;">✕</button>
+      </div>
+      <div id="player-media-container" style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+        <!-- Injected dynamically -->
+      </div>
+      <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.4rem; overflow: hidden;">
+          <span style="font-size: 0.78rem; color: var(--text-muted);">📁 Location:</span>
+          <span id="player-file-path-display" style="font-size: 0.78rem; color: var(--text-secondary); font-family: monospace; overflow: hidden; text-overflow: ellipsis; max-width: 400px;"></span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm" id="player-btn-copy-path">
+            📋 Copy Path
+          </button>
+          <button class="btn btn-secondary btn-sm" id="player-btn-open-folder">
+            📁 Open Folder
+          </button>
+          <button class="btn btn-secondary btn-sm" id="player-btn-open-external">
+            💻 Windows Player
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-App Downloads Folder Explorer Modal -->
+  <div class="modal-overlay" id="folder-modal-overlay">
+    <div class="modal-box" style="max-width: 820px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.4rem;">📁</span>
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Downloads Folder Explorer</h3>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">Manage and access all downloaded media on your computer</span>
+          </div>
+        </div>
+        <button class="icon-btn" id="folder-modal-close-btn" style="width: 32px; height: 32px; border-radius: 50%; font-size: 1rem;" title="Close">✕</button>
+      </div>
+
+      <!-- Path Bar & Copy Actions -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem; margin-bottom: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Folder Path on your PC:</span>
+          <span id="folder-modal-files-count" style="font-size: 0.78rem; color: var(--primary); font-weight: 600;">0 files found</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="text" id="folder-modal-path-input" readonly style="flex: 1; font-family: monospace; font-size: 0.85rem; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem;" />
+          <button class="btn btn-primary btn-sm" id="folder-modal-copy-btn" title="Copy Path to Clipboard">
+            📋 Copy Path
+          </button>
+          <button class="btn btn-secondary btn-sm" id="folder-modal-launch-explorer-btn" title="Open in Windows File Explorer">
+            ⚡ Open in Explorer
+          </button>
+        </div>
+      </div>
+
+      <!-- Shortcut Tip Card -->
+      <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-sm); padding: 0.5rem 0.85rem; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem; color: var(--text-secondary);">
+        <span style="font-size: 1.1rem;">💡</span>
+        <div>
+          <strong>Windows Shortcut:</strong> Press <kbd style="background: var(--bg-surface); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-weight: 600;">Win + R</kbd> ➔ Press <kbd style="background: var(--bg-surface); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-weight: 600;">Ctrl + V</kbd> ➔ Hit <kbd style="background: var(--bg-surface); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border-color); font-weight: 600;">Enter</kbd> to jump straight into this folder in Windows!
+        </div>
+      </div>
+
+      <!-- Files List Container (Scrollable) -->
+      <div style="flex: 1; overflow-y: auto; max-height: 380px; padding-right: 4px;" id="folder-modal-files-list">
+        <!-- Dynamically rendered file cards -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn btn-secondary btn-sm" id="folder-modal-refresh-btn">
+          🔄 Refresh Files List
+        </button>
+        <button class="btn btn-secondary btn-sm" id="folder-modal-done-btn">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js?v=2.5"></script>
+</body>
+</html>
