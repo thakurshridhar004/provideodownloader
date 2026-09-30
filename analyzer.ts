@@ -194,6 +194,7 @@ export class VideoAnalyzer {
         "--no-warnings",
         "--no-playlist",
         "--skip-download",
+        "--socket-timeout", "10",  // fail fast on network hang
       ];
       if (forceIpv4) {
         a.push("--force-ipv4");
@@ -214,6 +215,23 @@ export class VideoAnalyzer {
       return a;
     };
 
+    // Helper: run yt-dlp with a max wall-clock timeout (ms)
+    const runWithTimeout = async (
+      args: string[],
+      timeoutMs = 6000
+    ): Promise<{ code: number; stdout: Uint8Array; stderr: Uint8Array }> => {
+      const proc = new Deno.Command(YTDLP_PATH, { args, stdout: "piped", stderr: "piped" }).spawn();
+      const timer = setTimeout(() => { try { proc.kill(); } catch (_) {} }, timeoutMs);
+      try {
+        const result = await proc.output();
+        clearTimeout(timer);
+        return result;
+      } catch (e) {
+        clearTimeout(timer);
+        throw e;
+      }
+    };
+
     // Primary extraction attempt
     let cmd = new Deno.Command(YTDLP_PATH, {
       args: buildArgs(false, true),
@@ -222,20 +240,16 @@ export class VideoAnalyzer {
     });
 
     let process = cmd.spawn();
+    const killTimer1 = setTimeout(() => { try { process.kill(); } catch (_) {} }, 7000);
     let { code, stdout, stderr } = await process.output();
+    clearTimeout(killTimer1);
 
     // If first attempt failed, retry with multi-client fallback without force-ipv4
     if (code !== 0) {
       const firstErr = new TextDecoder().decode(stderr).trim();
-      console.warn("[Analyzer] Primary extraction failed, retrying with alternative client fallback...", firstErr.slice(0, 160));
-      
-      cmd = new Deno.Command(YTDLP_PATH, {
-        args: buildArgs(true, false),
-        stdout: "piped",
-        stderr: "piped",
-      });
-      process = cmd.spawn();
-      const retryResult = await process.output();
+      console.warn("[Analyzer] Primary extraction failed, retrying...", firstErr.slice(0, 120));
+
+      const retryResult = await runWithTimeout(buildArgs(true, false), 6000);
       if (retryResult.code === 0) {
         code = 0;
         stdout = retryResult.stdout;
@@ -245,29 +259,53 @@ export class VideoAnalyzer {
       }
     }
 
-    // ── Invidious Fallback (cookie-free) ──────────────────────────────────────
+    // ── Attempt 3: android_vr / tv_embedded — bypass datacenter bot check ────────
+    if (code !== 0) {
+      const clientsToTry = ["android_vr", "tv_embedded", "android_creator"];
+      for (const client of clientsToTry) {
+        if (code === 0) break;
+        console.warn(`[Analyzer] Trying player_client=${client}...`);
+        const clientArgs = [
+          "--ffmpeg-location", FFMPEG_PATH,
+          "--dump-single-json", "--no-warnings", "--no-playlist", "--skip-download",
+          "--socket-timeout", "10",
+          "--extractor-args", `youtube:player_client=${client};formats=missing_pot`,
+          ...(cf ? ["--cookies", cf] : []),
+          trimmed,
+        ];
+        try {
+          const clientResult = await runWithTimeout(clientArgs, 6000);
+          if (clientResult.code === 0 && clientResult.stdout.length > 10) {
+            console.log(`[Analyzer] player_client=${client} succeeded!`);
+            code = 0; stdout = clientResult.stdout; stderr = clientResult.stderr;
+          } else {
+            console.warn(`[Analyzer] client=${client} failed:`, new TextDecoder().decode(clientResult.stderr).slice(0, 80));
+            if (clientResult.stderr.length > 0) stderr = clientResult.stderr;
+          }
+        } catch (e) { console.warn(`[Analyzer] client=${client} exception:`, e); }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    // ── Invidious Fallback (cookie-free) ─────────────────────────────────────────
     if (code !== 0 && isYouTubeUrl(trimmed)) {
       const botErr = new TextDecoder().decode(stderr).trim();
       if (isBotProtectionError(botErr)) {
         console.warn("[Analyzer] YouTube bot protection. Trying Invidious fallback instances...");
+        let attempts = 0;
         for (const instance of INVIDIOUS_INSTANCES) {
+          if (attempts >= 3) break; // limit to 3 instances to save time
+          attempts++;
           const invUrl = toInvidiousUrl(trimmed, instance);
           if (!invUrl) break;
-          console.log(`[Analyzer] Trying: ${instance}`);
+          console.log(`[Analyzer] Trying Invidious: ${instance}`);
           try {
-            const invCmd = new Deno.Command(YTDLP_PATH, {
-              args: [
-                "--ffmpeg-location", FFMPEG_PATH,
-                "--dump-single-json",
-                "--no-warnings",
-                "--no-playlist",
-                "--skip-download",
-                invUrl,
-              ],
-              stdout: "piped",
-              stderr: "piped",
-            });
-            const invResult = await invCmd.spawn().output();
+            const invResult = await runWithTimeout([
+              "--ffmpeg-location", FFMPEG_PATH,
+              "--dump-single-json", "--no-warnings", "--no-playlist", "--skip-download",
+              "--socket-timeout", "10",
+              invUrl,
+            ], 7000);
             if (invResult.code === 0 && invResult.stdout.length > 10) {
               console.log(`[Analyzer] Invidious fallback succeeded: ${instance}`);
               code = 0;
