@@ -325,7 +325,7 @@ export class VideoAnalyzer {
 
     if (code !== 0) {
       // Piped fallback
-      const pipedData = await fallbackPipedAPI(id);
+      const pipedData = await fallbackPipedAPI(trimmed);
       if (pipedData) return pipedData;
 
       const errText = new TextDecoder().decode(stderr).trim();

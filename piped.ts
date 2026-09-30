@@ -1,5 +1,12 @@
 // Fallback to Piped API and Cobalt API if yt-dlp completely fails
-export async function fallbackPipedAPI(videoId: string) {
+export async function fallbackPipedAPI(url: string) {
+  // Extract video ID from YouTube URL
+  let videoId = url;
+  try {
+    const u = new URL(url);
+    videoId = u.searchParams.get("v") || u.pathname.split("/").pop() || url;
+  } catch(e) {}
+
   const cobaltInstances = [
     "https://cobalt.clxxped.lol",
     "https://co.wuk.sh"
