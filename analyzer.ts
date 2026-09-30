@@ -197,7 +197,7 @@ export class VideoAnalyzer {
         "--socket-timeout", "10",  // fail fast on network hang
       ];
       if (forceIpv4) {
-        a.push("--force-ipv4");
+        a.push("--prefer-free-formats");
       }
       if (hasPot) {
         a.push("--plugin-dirs", ROOT_DIR);
@@ -349,7 +349,7 @@ export class VideoAnalyzer {
         throw new Error("Unsupported website or video format. Please verify the URL points to a supported platform.");
       }
 
-      const firstLine = errText.split("\n")[0] || "Failed to analyze URL.";
+      const firstLine = errText.trim() ? errText.split("\n")[0] : "No error output from yt-dlp (Timeout because of Cloud IP block).";
       throw new Error(`Extraction failed: ${firstLine.replace(/^ERROR:\s*/, "")}`);
     }
 
@@ -798,3 +798,4 @@ export class VideoAnalyzer {
 }
 
 export const videoAnalyzer = new VideoAnalyzer();
+
