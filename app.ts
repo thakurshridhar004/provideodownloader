@@ -197,6 +197,8 @@ async function handleRequest(req: Request): Promise<Response> {
 
   // Analyze URL
   if (pathname === "/api/analyze" && method === "POST") {
+    const host = req.headers.get("host") || "";
+    const isLocalhost = host.startsWith("localhost") || host.startsWith("127.0.0.1") || host.startsWith("[::1]");
     try {
       const body = await req.json();
       if (!body.url) {
@@ -205,7 +207,20 @@ async function handleRequest(req: Request): Promise<Response> {
       const metadata = await videoAnalyzer.analyzeUrl(body.url);
       return jsonResponse(metadata);
     } catch (err: any) {
-      return errorResponse(err.message || "Failed to analyze URL.");
+      const msg: string = err.message || "Failed to analyze URL.";
+      // YouTube bot-protection errors — show different messages to owner vs public
+      if (msg.includes("YouTube Cloud Protection") || msg.includes("not a bot") || msg.includes("sign in to confirm")) {
+        if (isLocalhost) {
+          // Owner sees the full fix instructions
+          return errorResponse(msg);
+        } else {
+          // Public users see a clean, friendly message
+          return errorResponse(
+            "YouTube is temporarily restricting downloads from this server. This is a server-side issue — please try again in a few minutes, or try a different video."
+          );
+        }
+      }
+      return errorResponse(msg);
     }
   }
 

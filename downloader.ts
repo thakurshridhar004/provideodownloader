@@ -1,7 +1,8 @@
 import { DownloadItem, DownloadStatus } from "./types.ts";
 import { historyManager } from "./history.ts";
 import { settingsManager } from "./settings.ts";
-import { formatBytes, getCookieFilePath } from "./analyzer.ts";
+import { formatBytes, getCookieFilePath, toInvidiousUrl, isYouTubeUrl } from "./analyzer.ts";
+
 import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
 
 const ROOT_DIR = import.meta.dirname ? join(import.meta.dirname, "..") : Deno.cwd();
@@ -41,6 +42,8 @@ export class DownloadTask {
   private fragIndex = 0;
   private fragTotal = 0;
   private listeners: Set<DownloadListener> = new Set();
+  private botProtectionDetected = false;
+
 
   constructor(item: DownloadItem) {
     this.item = { ...item };
@@ -397,6 +400,149 @@ export class DownloadTask {
           clientId: this.item.clientId,
         });
       } else {
+        // ── Invidious fallback for YouTube bot-protection (no cookies needed) ────
+        if (this.botProtectionDetected && isYouTubeUrl(this.item.url)) {
+          const INVIDIOUS_INSTANCES = [
+            "https://inv.nadeko.net",
+            "https://invidious.fdn.fr",
+            "https://iv.ggtyler.dev",
+            "https://yt.drgnz.club",
+            "https://invidious.incogniweb.net",
+          ];
+          let invSucceeded = false;
+
+          for (const instance of INVIDIOUS_INSTANCES) {
+            if (this.isUserCancelled) break;
+            const invUrl = toInvidiousUrl(this.item.url, instance);
+            if (!invUrl) break;
+
+            console.log(`[Task ${this.item.id}] Trying Invidious fallback: ${instance}`);
+            this.botProtectionDetected = false;
+            this.item.errorMessage = undefined;
+            this.item.status = "downloading";
+            this.item.progress = 0;
+            this.item.downloadSpeed = `Retrying via ${new URL(instance).hostname}...`;
+            this.notify();
+
+            // Build clean args with Invidious URL (drop youtube extractor-args)
+            const invArgs = args
+              .slice(0, -1) // remove original URL at the end
+              .filter((_a, i, arr) => {
+                // Remove --extractor-args youtube:... pair
+                if (arr[i] === "--extractor-args" && i + 1 < arr.length && arr[i + 1].includes("youtube:")) return false;
+                if (i > 0 && arr[i - 1] === "--extractor-args" && arr[i].includes("youtube:")) return false;
+                return true;
+              });
+            invArgs.push(invUrl);
+
+            try {
+              const invCmd = new Deno.Command(YTDLP_PATH, {
+                args: invArgs,
+                stdout: "piped",
+                stderr: "piped",
+              });
+              this.process = invCmd.spawn();
+              this.item.pid = this.process.pid;
+              this.notify();
+
+              const invStdoutP = this.readStream(this.process.stdout, false);
+              const invStderrP = this.readStream(this.process.stderr, true);
+              const invStatus = await this.process.status;
+              await Promise.all([invStdoutP, invStderrP]);
+              this.item.pid = undefined;
+              this.process = null;
+
+              if (invStatus.success) {
+                console.log(`[Task ${this.item.id}] Invidious fallback succeeded: ${instance}`);
+                invSucceeded = true;
+                break;
+              }
+              console.warn(`[Task ${this.item.id}] Invidious ${instance} failed, trying next...`);
+            } catch (e) {
+              console.warn(`[Task ${this.item.id}] Invidious ${instance} exception:`, e);
+            }
+          }
+
+          if (!invSucceeded) {
+            this.item.status = "failed";
+            if (!this.item.errorMessage) {
+              this.item.errorMessage = "YouTube is restricting this server's IP. All fallback routes exhausted. Please try again later.";
+            }
+            this.notify();
+            return;
+          }
+
+          // Invidious succeeded — complete the download normally
+          {
+            const resolvedPathInv = this.item.destinationFile;
+            let fileExistsInv = false;
+            if (resolvedPathInv) {
+              try { fileExistsInv = Deno.statSync(resolvedPathInv).isFile; } catch (_e) {}
+            }
+            if (!fileExistsInv) {
+              // Search destDir for recently-written file
+              try {
+                const candidates: { path: string; mtime: number }[] = [];
+                const videoIdMatchInv = this.item.url.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+                const videoIdInv = videoIdMatchInv ? videoIdMatchInv[1] : "";
+                const searchKeyInv = this.item.title ? this.item.title.slice(0, 15).toLowerCase() : "";
+                for (const entry of Deno.readDirSync(destDir)) {
+                  if (!entry.isFile || entry.name.endsWith(".part") || entry.name.endsWith(".ytdl")) continue;
+                  if ((videoIdInv && entry.name.includes(videoIdInv)) || (searchKeyInv && entry.name.toLowerCase().includes(searchKeyInv))) {
+                    const fp = join(destDir, entry.name).replaceAll("/", "\\");
+                    try { candidates.push({ path: fp, mtime: Deno.statSync(fp).mtime?.getTime() || 0 }); } catch (_e) {}
+                  }
+                }
+                candidates.sort((a, b) => b.mtime - a.mtime);
+                if (candidates.length > 0) { this.item.destinationFile = candidates[0].path; fileExistsInv = true; }
+              } catch (_err) {}
+            }
+            if (!fileExistsInv) {
+              this.item.status = "failed";
+              this.item.errorMessage = "Invidious download finished, but file not found on disk.";
+              this.notify();
+              return;
+            }
+            this.item.status = "completed";
+            this.item.progress = 100;
+            this.item.eta = "00:00";
+            this.item.completedAt = Date.now();
+            let finalFileSizeInv = "Unknown";
+            let finalFileSizeBytesInv = 0;
+            try {
+              if (this.item.destinationFile && Deno.statSync(this.item.destinationFile).isFile) {
+                finalFileSizeBytesInv = Deno.statSync(this.item.destinationFile).size;
+                finalFileSizeInv = formatBytes(finalFileSizeBytesInv);
+              }
+            } catch (_err) {}
+            this.item.downloadSpeed = `✅ Done (via Invidious) — ${finalFileSizeInv}`;
+            this.item.downloadedFormatted = finalFileSizeInv;
+            this.item.totalFormatted = finalFileSizeInv;
+            this.item.downloadedBytes = finalFileSizeBytesInv;
+            this.item.totalBytes = finalFileSizeBytesInv;
+            this.notify();
+            const fileNameInv = this.item.destinationFile!.split(/[\/\\]/).pop() || `${this.item.title}.mp4`;
+            historyManager.addItem({
+              id: this.item.id,
+              url: this.item.url,
+              title: this.item.title,
+              thumbnail: this.item.thumbnail,
+              type: this.item.type,
+              resolutionLabel: this.item.selectedFormat.resolutionLabel || (this.item.type === "video" ? "Video" : "Audio"),
+              container: this.item.selectedFormat.container || "mp4",
+              fileSizeFormatted: finalFileSizeInv,
+              filePath: this.item.destinationFile!,
+              fileName: fileNameInv,
+              duration: this.item.duration,
+              downloadDate: Date.now(),
+              status: "completed",
+              clientId: this.item.clientId,
+            });
+          }
+          return;
+
+        }
+        // ──────────────────────────────────────────────────────────────────────
         this.item.status = "failed";
         if (!this.item.errorMessage) {
           this.item.errorMessage = `Download process exited with error code ${status.code}.`;
@@ -493,8 +639,13 @@ export class DownloadTask {
             console.error(`[Task ${this.item.id} ERR]:`, line);
             if (!this.item.errorMessage) {
               const lower = line.toLowerCase();
-              if (lower.includes("not a bot") || lower.includes("confirm you")) {
-                this.item.errorMessage = "YouTube Bot Protection (Sign in required) triggered on this IP. Quick Fix: Reconnect WiFi / Mobile Hotspot for a fresh IP or place cookies.txt in app folder.";
+              if (
+                lower.includes("not a bot") || lower.includes("confirm you") ||
+                lower.includes("sign in to confirm") || lower.includes("precondition check failed") ||
+                lower.includes("http error 429") || lower.includes("requested format is not available")
+              ) {
+                this.botProtectionDetected = true;
+                this.item.errorMessage = "YouTube bot protection triggered. Retrying via Invidious mirror...";
               } else if (line.includes("ERROR:")) {
                 this.item.errorMessage = line.replace(/^ERROR:\s*/, "");
               }

@@ -49,6 +49,61 @@ export function getCookieFilePath(): string | null {
   return null;
 }
 
+// ── Invidious fallback (cookie-free YouTube bypass) ─────────────────────────
+// yt-dlp natively supports Invidious URLs — when Render's datacenter IP is
+// blocked by YouTube, we re-route through a public Invidious instance which
+// has a residential/better-reputation IP and proxies back to YouTube.
+const INVIDIOUS_INSTANCES = [
+  "https://inv.nadeko.net",
+  "https://invidious.fdn.fr",
+  "https://iv.ggtyler.dev",
+  "https://yt.drgnz.club",
+  "https://invidious.incogniweb.net",
+];
+
+function extractYouTubeVideoId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com")) {
+      if (u.searchParams.get("v")) return u.searchParams.get("v");
+      // shorts / embed
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (parts.length >= 2 && (parts[0] === "shorts" || parts[0] === "embed" || parts[0] === "v")) return parts[1];
+    }
+    if (u.hostname === "youtu.be") {
+      return u.pathname.slice(1).split("?")[0] || null;
+    }
+  } catch (_) {}
+  return null;
+}
+
+export function toInvidiousUrl(youtubeUrl: string, instance: string): string | null {
+  const vid = extractYouTubeVideoId(youtubeUrl);
+  if (!vid || vid.length < 5) return null;
+  return `${instance}/watch?v=${vid}`;
+}
+
+export function isYouTubeUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.hostname.includes("youtube.com") || u.hostname === "youtu.be";
+  } catch (_) { return false; }
+}
+
+function isBotProtectionError(errText: string): boolean {
+  const lower = errText.toLowerCase();
+  return (
+    lower.includes("not a bot") ||
+    lower.includes("sign in to confirm") ||
+    lower.includes("confirm you") ||
+    lower.includes("requested format is not available") ||
+    lower.includes("precondition check failed") ||
+    lower.includes("http error 429") ||
+    lower.includes("403")
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function formatBytes(bytes: number | null | undefined): string {
   if (!bytes || bytes <= 0 || isNaN(bytes)) return "Estimated upon download";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -189,6 +244,45 @@ export class VideoAnalyzer {
         stderr = retryResult.stderr.length > 0 ? retryResult.stderr : stderr;
       }
     }
+
+    // ── Invidious Fallback (cookie-free) ──────────────────────────────────────
+    if (code !== 0 && isYouTubeUrl(trimmed)) {
+      const botErr = new TextDecoder().decode(stderr).trim();
+      if (isBotProtectionError(botErr)) {
+        console.warn("[Analyzer] YouTube bot protection. Trying Invidious fallback instances...");
+        for (const instance of INVIDIOUS_INSTANCES) {
+          const invUrl = toInvidiousUrl(trimmed, instance);
+          if (!invUrl) break;
+          console.log(`[Analyzer] Trying: ${instance}`);
+          try {
+            const invCmd = new Deno.Command(YTDLP_PATH, {
+              args: [
+                "--ffmpeg-location", FFMPEG_PATH,
+                "--dump-single-json",
+                "--no-warnings",
+                "--no-playlist",
+                "--skip-download",
+                invUrl,
+              ],
+              stdout: "piped",
+              stderr: "piped",
+            });
+            const invResult = await invCmd.spawn().output();
+            if (invResult.code === 0 && invResult.stdout.length > 10) {
+              console.log(`[Analyzer] Invidious fallback succeeded: ${instance}`);
+              code = 0;
+              stdout = invResult.stdout;
+              stderr = invResult.stderr;
+              break;
+            }
+            console.warn(`[Analyzer] ${instance} failed:`, new TextDecoder().decode(invResult.stderr).slice(0, 120));
+          } catch (e) {
+            console.warn(`[Analyzer] ${instance} exception:`, e);
+          }
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     if (code !== 0) {
       const errText = new TextDecoder().decode(stderr).trim();
