@@ -1,5 +1,51 @@
-// Fallback to Piped API if yt-dlp completely fails
+// Fallback to Piped API and Cobalt API if yt-dlp completely fails
 export async function fallbackPipedAPI(videoId: string) {
+  const cobaltInstances = [
+    "https://cobalt.clxxped.lol",
+    "https://co.wuk.sh"
+  ];
+
+  for (const instance of cobaltInstances) {
+    try {
+      console.log(`[Analyzer] Trying Cobalt API fallback: ${instance}`);
+      const res = await fetch(`${instance}/api/json`, {
+        method: "POST",
+        headers: { 
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        body: JSON.stringify({ url: `https://www.youtube.com/watch?v=${videoId}` })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url || data.picker) {
+          console.log("[Analyzer] Cobalt API SUCCESS!");
+          // Quick conversion for Cobalt v7 response
+          const formats = [];
+          if (data.picker) {
+             data.picker.forEach((p: any) => {
+               formats.push({
+                 url: p.url, quality: p.quality || "Unknown", hasAudio: true, isAudioOnly: false, ext: "mp4", codec: "unknown", rawFormatId: "cobalt"
+               });
+             });
+          } else if (data.url) {
+             formats.push({
+               url: data.url, quality: "Best", hasAudio: true, isAudioOnly: false, ext: "mp4", codec: "unknown", rawFormatId: "cobalt"
+             });
+          }
+          return {
+            success: true,
+            data: { title: "YouTube Video", duration: 0, thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, formats }
+          };
+        }
+      }
+    } catch(e: any) {
+      console.warn(`[Analyzer] Cobalt API error: ${e.message}`);
+    }
+  }
+
+
   const instances = [
     "https://pipedapi.tokhmi.xyz",
     "https://pipedapi.kavin.rocks",
@@ -60,7 +106,7 @@ export async function fallbackPipedAPI(videoId: string) {
           formats: formats
         }
       };
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`[Analyzer] Piped API failed for ${instance}`);
     }
   }
