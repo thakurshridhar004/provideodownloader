@@ -253,10 +253,10 @@ export class VideoAnalyzer {
       const retryResult = await runWithTimeout(buildArgs(true, false), 6000);
       if (retryResult.code === 0) {
         code = 0;
-        stdout = retryResult.stdout;
-        stderr = retryResult.stderr;
+        stdout = retryResult.stdout as any;
+        stderr = retryResult.stderr as any;
       } else {
-        stderr = retryResult.stderr.length > 0 ? retryResult.stderr : stderr;
+        stderr = (retryResult.stderr.length > 0 ? retryResult.stderr : stderr) as any;
       }
     }
 
@@ -278,10 +278,10 @@ export class VideoAnalyzer {
           const clientResult = await runWithTimeout(clientArgs, 6000);
           if (clientResult.code === 0 && clientResult.stdout.length > 10) {
             console.log(`[Analyzer] player_client=${client} succeeded!`);
-            code = 0; stdout = clientResult.stdout; stderr = clientResult.stderr;
+            code = 0; stdout = clientResult.stdout as any; stderr = clientResult.stderr as any;
           } else {
             console.warn(`[Analyzer] client=${client} failed:`, new TextDecoder().decode(clientResult.stderr).slice(0, 80));
-            if (clientResult.stderr.length > 0) stderr = clientResult.stderr;
+            if (clientResult.stderr.length > 0) stderr = clientResult.stderr as any;
           }
         } catch (e) { console.warn(`[Analyzer] client=${client} exception:`, e); }
       }
@@ -310,8 +310,8 @@ export class VideoAnalyzer {
             if (invResult.code === 0 && invResult.stdout.length > 10) {
               console.log(`[Analyzer] Invidious fallback succeeded: ${instance}`);
               code = 0;
-              stdout = invResult.stdout;
-              stderr = invResult.stderr;
+              stdout = invResult.stdout as any;
+              stderr = invResult.stderr as any;
               break;
             }
             console.warn(`[Analyzer] ${instance} failed:`, new TextDecoder().decode(invResult.stderr).slice(0, 120));
