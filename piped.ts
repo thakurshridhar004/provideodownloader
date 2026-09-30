@@ -5,7 +5,7 @@ export async function fallbackPipedAPI(url: string) {
   try {
     const u = new URL(url);
     videoId = u.searchParams.get("v") || u.pathname.split("/").pop() || url;
-  } catch(e) {}
+  } catch(e: any) {}
 
   const cobaltInstances = [
     "https://cobalt.clxxped.lol",
