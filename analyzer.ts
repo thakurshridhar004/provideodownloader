@@ -218,7 +218,7 @@ export class VideoAnalyzer {
     // Helper: run yt-dlp with a max wall-clock timeout (ms)
     const runWithTimeout = async (
       args: string[],
-      timeoutMs = 6000
+      timeoutMs = 15000
     ): Promise<{ code: number; stdout: Uint8Array; stderr: Uint8Array }> => {
       const proc = new Deno.Command(YTDLP_PATH, { args, stdout: "piped", stderr: "piped" }).spawn();
       const timer = setTimeout(() => { try { proc.kill(); } catch (_) {} }, timeoutMs);
@@ -240,7 +240,7 @@ export class VideoAnalyzer {
     });
 
     let process = cmd.spawn();
-    const killTimer1 = setTimeout(() => { try { process.kill(); } catch (_) {} }, 7000);
+    const killTimer1 = setTimeout(() => { try { process.kill(); } catch (_) {} }, 15000);
     let { code, stdout, stderr } = await process.output();
     clearTimeout(killTimer1);
 
@@ -305,7 +305,7 @@ export class VideoAnalyzer {
               "--dump-single-json", "--no-warnings", "--no-playlist", "--skip-download",
               "--socket-timeout", "10",
               invUrl,
-            ], 7000);
+            ], 15000);
             if (invResult.code === 0 && invResult.stdout.length > 10) {
               console.log(`[Analyzer] Invidious fallback succeeded: ${instance}`);
               code = 0;
