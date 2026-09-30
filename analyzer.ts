@@ -1,3 +1,4 @@
+import { fallbackPipedAPI } from "./piped.ts";
 import { VideoMetadata, VideoFormatOption, AudioFormatOption } from "./types.ts";
 import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
 
@@ -323,6 +324,10 @@ export class VideoAnalyzer {
     // ─────────────────────────────────────────────────────────────────────────
 
     if (code !== 0) {
+      // Piped fallback
+      const pipedData = await fallbackPipedAPI(id);
+      if (pipedData) return pipedData;
+
       const errText = new TextDecoder().decode(stderr).trim();
       console.error("yt-dlp error:", errText);
 
@@ -798,4 +803,5 @@ export class VideoAnalyzer {
 }
 
 export const videoAnalyzer = new VideoAnalyzer();
+
 
