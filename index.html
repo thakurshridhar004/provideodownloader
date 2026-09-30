@@ -186,6 +186,11 @@
           <div class="error-hint">
             💡 Tips: Verify the link is publicly accessible without login, check if the video has been taken down or made private, and make sure the link starts with http:// or https://.
           </div>
+          <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-goto-cookies">
+              🍪 Fix Cloud Bot Block (Add YouTube Cookies)
+            </button>
+          </div>
         </div>
       </div>
 
@@ -489,6 +494,49 @@
             </button>
           </div>
         </form>
+      </div>
+
+      <!-- YouTube & Platform Cookies Authentication Card -->
+      <div class="settings-card" id="cookies-settings-card" style="margin-top: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.25rem;">🍪 YouTube &amp; Cloud Bypass (Cookies)</h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">
+              Cloud servers (Render) use datacenter IPs that YouTube often blocks. Adding your browser cookies ensures 100% bypass of bot checks and format restrictions.
+            </p>
+          </div>
+          <div id="cookies-status-badge" class="stat-chip" style="white-space: nowrap; font-size: 0.8rem;">
+            Checking status...
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+          <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
+            <strong>Quick 30-Second Setup:</strong><br />
+            1. In Chrome/Brave/Edge, install the extension <em>"Get cookies.txt LOCALLY"</em>.<br />
+            2. Open <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" style="color: var(--accent);">YouTube.com</a> in your browser.<br />
+            3. Open the extension, click <strong>"Export"</strong>, and paste the content below or select the downloaded file.
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;">
+            <input type="file" id="cookies-file-input" accept=".txt" style="display: none;" />
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-upload-cookies-file">
+              📁 Choose cookies.txt File
+            </button>
+            <span id="cookies-file-name" style="font-size: 0.82rem; color: var(--text-muted);">No file selected</span>
+          </div>
+
+          <textarea id="cookies-textarea" placeholder="# Netscape HTTP Cookie File&#10;# Paste your exported YouTube cookies.txt content here..." style="width: 100%; height: 110px; font-family: monospace; font-size: 0.8rem; background: var(--bg-base); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem; resize: vertical; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-delete-cookies" style="display: none; color: #ef4444;">
+            🗑️ Delete Cookies
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-save-cookies">
+            💾 Save Cookies to Server
+          </button>
+        </div>
       </div>
     </section>
 

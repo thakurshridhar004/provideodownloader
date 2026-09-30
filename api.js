@@ -148,4 +148,22 @@ export const API = {
       body: JSON.stringify({ path }),
     });
   },
+
+  // Cookies Management
+  async getCookiesStatus() {
+    return await this.request("/api/cookies/status");
+  },
+
+  async saveCookies(content) {
+    return await this.request("/api/cookies/save", {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    });
+  },
+
+  async deleteCookies() {
+    return await this.request("/api/cookies/delete", {
+      method: "POST",
+    });
+  },
 };

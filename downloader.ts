@@ -109,13 +109,21 @@ export class DownloadTask {
       "--retry-sleep", "exp=1:15",
       "--socket-timeout", "25",
       "--no-mtime",
-      "--plugin-dirs", ROOT_DIR,
       "--print", "before_dl:TITLE|%(title)s",
       "--print", "before_dl:THUMBNAIL|%(thumbnail)s",
       "--print", "after_move:FINAL_FILE|%(filepath)s",
       "--progress",
       "--progress-template", "PROGRESS|%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s|%(progress._total_bytes_str)s|%(progress._downloaded_bytes_str)s|%(progress.status)s",
     ];
+
+    if (isWindows) {
+      args.push("--plugin-dirs", ROOT_DIR);
+    }
+
+    if (isYouTube) {
+      args.push("--extractor-args", "youtube:player_client=default,web_safari,mweb;formats=missing_pot");
+    }
+
     const cookieFile = getCookieFilePath();
     if (cookieFile) {
       args.push("--cookies", cookieFile);

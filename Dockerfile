@@ -1,11 +1,13 @@
 FROM denoland/deno:alpine-1.45.0
 
-# Install FFmpeg, Python3, curl, and aria2
-RUN apk add --no-cache ffmpeg python3 py3-pip curl aria2
+# Install FFmpeg, Python3, py3-pip, curl, aria2, and nodejs (for YouTube JS challenge solvers)
+RUN apk add --no-cache ffmpeg python3 py3-pip curl aria2 nodejs
 
-# Install latest standalone Linux yt-dlp binary
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && \
-    chmod a+rx /usr/local/bin/yt-dlp
+# Install yt-dlp with full dependencies (cryptography, brotli, websockets, etc.)
+RUN python3 -m pip install --no-cache-dir --break-system-packages -U "yt-dlp[default]"
+
+# Ensure yt-dlp is accessible in /usr/local/bin
+RUN if [ -f /usr/bin/yt-dlp ]; then ln -sf /usr/bin/yt-dlp /usr/local/bin/yt-dlp; fi
 
 WORKDIR /app
 
@@ -24,8 +26,8 @@ RUN if [ -f "app.ts" ] && [ ! -f "server/app.ts" ]; then \
 # Ensure data and downloads directories exist with full write permissions
 RUN mkdir -p data downloads && chmod -R 777 /app
 
-# Default port for Hugging Face Spaces (7860)
+# Default port for Hugging Face Spaces (7860), Render (10000 or PORT env)
 ENV PORT=7860
-EXPOSE 7860 3000
+EXPOSE 7860 3000 10000
 
 CMD ["deno", "run", "--allow-net", "--allow-read", "--allow-write", "--allow-run", "--allow-env", "server/app.ts"]

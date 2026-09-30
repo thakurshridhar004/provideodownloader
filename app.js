@@ -22,6 +22,7 @@ class App {
     this.bindHistoryControls();
     this.bindSettingsForm();
     this.bindFolderButtons();
+    this.bindCookiesControls();
 
     // Fetch initial settings
     await this.loadSettings();
@@ -1298,6 +1299,118 @@ class App {
           UI.showToast("Settings saved successfully!", "success");
         } catch (err) {
           UI.showToast(err.message || "Failed to update settings.", "error");
+        }
+      });
+    }
+  }
+
+  bindCookiesControls() {
+    const badge = document.getElementById("cookies-status-badge");
+    const textarea = document.getElementById("cookies-textarea");
+    const fileInput = document.getElementById("cookies-file-input");
+    const chooseBtn = document.getElementById("btn-upload-cookies-file");
+    const fileNameSpan = document.getElementById("cookies-file-name");
+    const saveBtn = document.getElementById("btn-save-cookies");
+    const deleteBtn = document.getElementById("btn-delete-cookies");
+    const gotoCookiesBtn = document.getElementById("btn-goto-cookies");
+
+    // "Fix Cloud Bot Block" button in analysis error banner
+    if (gotoCookiesBtn) {
+      gotoCookiesBtn.addEventListener("click", () => {
+        const settingsTabBtn = document.querySelector('.nav-tab-btn[data-tab="tab-settings"]');
+        if (settingsTabBtn) settingsTabBtn.click();
+        setTimeout(() => {
+          const card = document.getElementById("cookies-settings-card");
+          if (card) {
+            card.scrollIntoView({ behavior: "smooth" });
+            if (textarea) textarea.focus();
+          }
+        }, 150);
+      });
+    }
+
+    const refreshCookieStatus = async () => {
+      try {
+        const res = await API.getCookiesStatus();
+        if (res && res.configured) {
+          if (badge) {
+            badge.textContent = `✅ Active (${(res.size / 1024).toFixed(1)} KB)`;
+            badge.style.color = "#10b981";
+            badge.style.borderColor = "rgba(16, 185, 129, 0.4)";
+          }
+          if (deleteBtn) deleteBtn.style.display = "inline-flex";
+        } else {
+          if (badge) {
+            badge.textContent = "⚠️ Not Configured";
+            badge.style.color = "#f59e0b";
+            badge.style.borderColor = "rgba(245, 158, 11, 0.4)";
+          }
+          if (deleteBtn) deleteBtn.style.display = "none";
+        }
+      } catch (_e) {
+        if (badge) badge.textContent = "Status Unknown";
+      }
+    };
+
+    refreshCookieStatus();
+
+    if (chooseBtn && fileInput) {
+      chooseBtn.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          if (fileNameSpan) fileNameSpan.textContent = file.name;
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            if (textarea && evt.target?.result) {
+              textarea.value = evt.target.result;
+            }
+          };
+          reader.readAsText(file);
+        }
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener("click", async () => {
+        const content = textarea?.value?.trim();
+        if (!content) {
+          UI.showToast("Please paste cookie text or upload a cookies.txt file first.", "warning");
+          return;
+        }
+        saveBtn.disabled = true;
+        saveBtn.textContent = "⏳ Saving...";
+        try {
+          const res = await API.saveCookies(content);
+          if (res && res.success) {
+            UI.showToast("Cookies saved successfully! Cloud YouTube downloads are now unlocked.", "success", 4000);
+            refreshCookieStatus();
+          } else {
+            UI.showToast(res.error || "Failed to save cookies.", "error");
+          }
+        } catch (err) {
+          UI.showToast(err.message || "Failed to save cookies.", "error");
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "💾 Save Cookies to Server";
+        }
+      });
+    }
+
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", async () => {
+        if (!confirm("Are you sure you want to remove configured cookies?")) return;
+        deleteBtn.disabled = true;
+        try {
+          await API.deleteCookies();
+          UI.showToast("Cookies removed from server.", "info");
+          if (textarea) textarea.value = "";
+          if (fileNameSpan) fileNameSpan.textContent = "No file selected";
+          refreshCookieStatus();
+        } catch (err) {
+          UI.showToast(err.message || "Failed to delete cookies.", "error");
+        } finally {
+          deleteBtn.disabled = false;
         }
       });
     }

@@ -3,7 +3,7 @@ import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
 
 const ROOT_DIR = import.meta.dirname ? join(import.meta.dirname, "..") : Deno.cwd();
 const isWindows = Deno.build.os === "windows";
-const YTDLP_PATH = (() => {
+export const YTDLP_PATH = (() => {
   const localExe = join(ROOT_DIR, "bin", isWindows ? "yt-dlp.exe" : "yt-dlp");
   try {
     if (Deno.statSync(localExe).isFile) return localExe;
@@ -11,13 +11,23 @@ const YTDLP_PATH = (() => {
   return "yt-dlp";
 })();
 
-const FFMPEG_PATH = (() => {
+export const FFMPEG_PATH = (() => {
   const localExe = join(ROOT_DIR, "bin", isWindows ? "ffmpeg.exe" : "ffmpeg");
   try {
     if (Deno.statSync(localExe).isFile) return localExe;
   } catch (_) {}
   return "ffmpeg";
 })();
+
+async function isPotProviderRunning(): Promise<boolean> {
+  if (!isWindows) return false;
+  try {
+    const res = await fetch("http://127.0.0.1:4416/ping", { signal: AbortSignal.timeout(500) });
+    return res.ok;
+  } catch (_) {
+    return false;
+  }
+}
 
 export function getCookieFilePath(): string | null {
   const userProfile = Deno.env.get("USERPROFILE") || "";
@@ -119,37 +129,74 @@ export class VideoAnalyzer {
       throw new Error("Invalid URL format. Please enter a valid URL beginning with http:// or https://");
     }
 
-    // Spawn yt-dlp to dump JSON metadata
-    const cmd = new Deno.Command(YTDLP_PATH, {
-      args: (() => {
-        const a = [
-          "--force-ipv4",
-          "--ffmpeg-location", FFMPEG_PATH,
-          "--plugin-dirs", ROOT_DIR,
-          "--dump-single-json",
-          "--no-warnings",
-          "--no-playlist",
-          "--skip-download",
-        ];
-        const cf = getCookieFilePath();
-        if (cf) a.push("--cookies", cf);
-        a.push(trimmed);
-        return a;
-      })(),
+    const hasPot = await isPotProviderRunning();
+    const cf = getCookieFilePath();
+
+    const buildArgs = (useAggressiveFallback = false, forceIpv4 = true) => {
+      const a = [
+        "--ffmpeg-location", FFMPEG_PATH,
+        "--dump-single-json",
+        "--no-warnings",
+        "--no-playlist",
+        "--skip-download",
+      ];
+      if (forceIpv4) {
+        a.push("--force-ipv4");
+      }
+      if (hasPot) {
+        a.push("--plugin-dirs", ROOT_DIR);
+      }
+      // Datacenter IP bypass for Render/Cloud environments:
+      if (useAggressiveFallback) {
+        a.push("--extractor-args", "youtube:player_client=mweb,android,web_embedded;formats=missing_pot");
+      } else {
+        a.push("--extractor-args", "youtube:player_client=default,web_safari,mweb;formats=missing_pot");
+      }
+      if (cf) {
+        a.push("--cookies", cf);
+      }
+      a.push(trimmed);
+      return a;
+    };
+
+    // Primary extraction attempt
+    let cmd = new Deno.Command(YTDLP_PATH, {
+      args: buildArgs(false, true),
       stdout: "piped",
       stderr: "piped",
     });
 
-    const process = cmd.spawn();
-    const { code, stdout, stderr } = await process.output();
+    let process = cmd.spawn();
+    let { code, stdout, stderr } = await process.output();
+
+    // If first attempt failed, retry with multi-client fallback without force-ipv4
+    if (code !== 0) {
+      const firstErr = new TextDecoder().decode(stderr).trim();
+      console.warn("[Analyzer] Primary extraction failed, retrying with alternative client fallback...", firstErr.slice(0, 160));
+      
+      cmd = new Deno.Command(YTDLP_PATH, {
+        args: buildArgs(true, false),
+        stdout: "piped",
+        stderr: "piped",
+      });
+      process = cmd.spawn();
+      const retryResult = await process.output();
+      if (retryResult.code === 0) {
+        code = 0;
+        stdout = retryResult.stdout;
+        stderr = retryResult.stderr;
+      } else {
+        stderr = retryResult.stderr.length > 0 ? retryResult.stderr : stderr;
+      }
+    }
 
     if (code !== 0) {
       const errText = new TextDecoder().decode(stderr).trim();
       console.error("yt-dlp error:", errText);
 
       const lower = errText.toLowerCase();
-      if (lower.includes("not a bot") || lower.includes("sign in to confirm") || lower.includes("confirm you")) {
-        throw new Error("YouTube Bot Protection (Sign in required) triggered on this IP. Quick Fix: 1) Reconnect WiFi or Mobile Hotspot to get a fresh IP (takes 10s), or 2) Export fresh cookies.txt from YouTube in your browser.");
+      if (lower.includes("not a bot") || lower.includes("sign in to confirm") || lower.includes("confirm you") || lower.includes("requested format is not available")) {
+        throw new Error("YouTube Cloud Protection triggered on Render: YouTube restricts automated requests from cloud datacenters. Quick fix: Go to Settings > Platform Cookies, paste your cookies.txt from YouTube (using 'Get cookies.txt LOCALLY' Chrome extension), and click Save.");
       }
       if (errText.includes("Private video") || errText.includes("Sign in if you've been granted access")) {
         throw new Error("This video is private or requires authentication to access.");
@@ -161,7 +208,7 @@ export class VideoAnalyzer {
         throw new Error("This video is protected by DRM and cannot be downloaded.");
       }
       if (errText.includes("HTTP Error 403")) {
-        throw new Error("Access forbidden (HTTP 403). The platform is restricting direct automated requests.");
+        throw new Error("Access forbidden (HTTP 403). The platform is restricting direct automated requests. Please add cookies.txt in Settings.");
       }
       if (errText.includes("HTTP Error 404")) {
         throw new Error("Video not found (HTTP 404). Please check the link and try again.");

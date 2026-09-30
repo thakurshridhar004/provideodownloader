@@ -1,5 +1,5 @@
 import { join, extname, dirname, basename } from "https://deno.land/std@0.224.0/path/mod.ts";
-import { videoAnalyzer, getCookieFilePath } from "./analyzer.ts";
+import { videoAnalyzer, getCookieFilePath, YTDLP_PATH } from "./analyzer.ts";
 import { queueManager } from "./queue.ts";
 import { historyManager } from "./history.ts";
 import { settingsManager } from "./settings.ts";
@@ -215,18 +215,18 @@ async function handleRequest(req: Request): Promise<Response> {
       const body = await req.json();
       if (!body.url) return errorResponse("URL is required.");
 
-      const ytdlpPath = join(ROOT_DIR, "bin", "yt-dlp.exe");
+      const ytdlpPath = YTDLP_PATH;
       // Use --flat-playlist to quickly get list of entries without downloading
       const args = [
         "--force-ipv4",
         "--flat-playlist",
         "--yes-playlist",
+        "--extractor-args", "youtube:player_client=default,web_safari,mweb;formats=missing_pot",
         "--print", "%(id)s\t%(title)s\t%(duration)s\t%(thumbnail)s\t%(webpage_url)s",
         "--no-warnings",
         "--no-playlist-reverse",
       ];
       
-      const { getCookieFilePath } = await import("./analyzer.ts");
       const cookieFile = getCookieFilePath();
       if (cookieFile) {
         args.push("--cookies", cookieFile);
@@ -348,7 +348,7 @@ async function handleRequest(req: Request): Promise<Response> {
   // Server-Sent Events (SSE) stream for real-time progress
   if (pathname === "/api/downloads/events" && method === "GET") {
     let subscriber: ((event: any) => void) | null = null;
-    let pingTimer: number | null = null;
+    let pingTimer: any = null;
 
     const stream = new ReadableStream({
       start(controller) {
